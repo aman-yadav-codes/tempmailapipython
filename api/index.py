@@ -64,21 +64,34 @@ def create_session():
     return session
 
 def initialize_session(user_id):
-    session = create_session()
-    response = session.get(HOMEPAGE_URL, headers=HEADERS)
-    
-    session_id = None
-    match = re.search(r'<meta\s+name="x-session-id"\s+content="([^"]+)"', response.text)
-    if match:
-        session_id = match.group(1)
+    try:
+        session = create_session()
+        response = session.get(HOMEPAGE_URL, headers=HEADERS)
         
-    user_sessions[user_id] = {
-        "session": session,
-        "session_id": session_id,
-        "email_address": None,
-        "email_expiry": 0,
-        "last_email_request_time": 0,
-    }
+        session_id = None
+        match = re.search(r'<meta\s+name="x-session-id"\s+content="([^"]+)"', response.text)
+        if match:
+            session_id = match.group(1)
+            
+        user_sessions[user_id] = {
+            "session": session,
+            "session_id": session_id,
+            "email_address": None,
+            "email_expiry": 0,
+            "last_email_request_time": 0,
+            "init_status_code": response.status_code,
+            "init_response": response.text[:200] if not match else "Success"
+        }
+    except Exception as e:
+        user_sessions[user_id] = {
+            "session": None,
+            "session_id": None,
+            "email_address": None,
+            "email_expiry": 0,
+            "last_email_request_time": 0,
+            "init_status_code": 500,
+            "init_response": str(e)
+        }
 
 def get_user_session(user_id):
     if user_id not in user_sessions:
@@ -95,6 +108,13 @@ def get_email(user_id, force_new=False):
         current_time < user["email_expiry"]):
         return {"email": user["email_address"], "expires_at": user["email_expiry"], "cached": True}
         
+    if not user.get("session_id"):
+        return {
+            "error": "Failed to initialize session.",
+            "init_status": user.get("init_status_code"),
+            "init_response": user.get("init_response")
+        }
+
     request_time = int(time.time() * 1000)
     pow_value = compute_pow(user["session_id"])
     api_url = f"https://tempmail.so/us/api/inbox?requestTime={request_time}&x={pow_value}&lang=us"
@@ -110,10 +130,12 @@ def get_email(user_id, force_new=False):
             user["email_expiry"] = data.get("expires")
             user["last_email_request_time"] = current_time
             return {"email": user["email_address"], "expires_at": user["email_expiry"], "cached": False}
+        else:
+            return {"error": "Failed to retrieve email address.", "status_code": response.status_code, "response_text": response.text}
     except Exception as e:
-        pass
+        return {"error": "Exception occurred.", "details": str(e)}
         
-    return {"error": "Failed to retrieve email address."}
+    return {"error": "Failed to retrieve email address. Unknown state."}
 
 def check_inbox(user_id):
     user = get_user_session(user_id)
