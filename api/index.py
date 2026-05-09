@@ -3,9 +3,7 @@ import time
 import hashlib
 import re
 from flask import Flask, request, jsonify
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.ssl_ import create_urllib3_context
+from curl_cffi import requests
 
 app = Flask(__name__)
 
@@ -30,12 +28,7 @@ HEADERS = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
 }
 
-class CipherAdapter(HTTPAdapter):
-    def init_poolmanager(self, *args, **kwargs):
-        context = create_urllib3_context()
-        context.set_ciphers("TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA")
-        kwargs['ssl_context'] = context
-        return super(CipherAdapter, self).init_poolmanager(*args, **kwargs)
+# CipherAdapter removed; using curl_cffi for impersonation
 
 def get_client_ip():
     if request.headers.get('x-forwarded-for'):
@@ -59,8 +52,8 @@ def compute_pow(nonce):
         t += 1
 
 def create_session():
-    session = requests.Session()
-    session.mount('https://', CipherAdapter())
+    # curl_cffi Session with impersonate bypasses Cloudflare Turnstile
+    session = requests.Session(impersonate="chrome110")
     return session
 
 def initialize_session(user_id):
