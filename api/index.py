@@ -32,8 +32,8 @@ def log_request_info():
 def compute_pow(nonce):
     if not nonce: return 0
     time_span = int(time.time() * 1000) // 300000
-    # Match the User-Agent used by curl_cffi for chrome120
-    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    # Match the User-Agent used by curl_cffi for safari15_5
+    user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15"
     t = 0
     while True:
         data = f"{nonce}:{t}:{time_span}:{user_agent}"
@@ -44,7 +44,7 @@ def compute_pow(nonce):
 
 def create_session():
     # curl_cffi Session with impersonate bypasses Cloudflare Turnstile
-    session = requests.Session(impersonate="chrome120")
+    session = requests.Session(impersonate="safari15_5")
     return session
 
 def initialize_session(user_id):
