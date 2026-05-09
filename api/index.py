@@ -14,18 +14,8 @@ user_sessions = {}
 
 HEADERS = {
     "accept": "application/json",
-    "accept-language": "en-US,en;q=0.9",
-    "content-type": "application/json",
-    "dnt": "1",
     "origin": "https://tempmail.so",
     "referer": "https://tempmail.so/",
-    "sec-ch-ua": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Google Chrome\";v=\"134\"",
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": "\"Windows\"",
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
 }
 
 # CipherAdapter removed; using curl_cffi for impersonation
@@ -42,7 +32,8 @@ def log_request_info():
 def compute_pow(nonce):
     if not nonce: return 0
     time_span = int(time.time() * 1000) // 300000
-    user_agent = HEADERS["user-agent"]
+    # Match the User-Agent used by curl_cffi for chrome120
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     t = 0
     while True:
         data = f"{nonce}:{t}:{time_span}:{user_agent}"
@@ -53,7 +44,7 @@ def compute_pow(nonce):
 
 def create_session():
     # curl_cffi Session with impersonate bypasses Cloudflare Turnstile
-    session = requests.Session(impersonate="chrome110")
+    session = requests.Session(impersonate="chrome120")
     return session
 
 def initialize_session(user_id):
